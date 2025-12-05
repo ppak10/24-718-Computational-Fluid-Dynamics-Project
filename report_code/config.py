@@ -15,7 +15,7 @@ class Config():
 
         # Time
         self.time_step_max = Quantity(0.5, "s") # t_max
-        self.time_step = Quantity(0.00002, "s") # dt
+        self.time_step = Quantity(1e-6, "s") # dt
 
         # Material
         # k = Quantity(6.7, "W/mK")

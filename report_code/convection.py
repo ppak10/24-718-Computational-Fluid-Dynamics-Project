@@ -3,7 +3,7 @@ import jax.numpy as jnp
 from functools import partial
 from jax import jit
 
-@partial(jit, static_argnums=(2, 3))
+@jit
 def compute_convection_u(u, v_at_u, dx, dy):
     """
     Computes the convection term for u-momentum (Equation A13).
@@ -27,7 +27,7 @@ def compute_convection_u(u, v_at_u, dx, dy):
 
     return conv
 
-@partial(jit, static_argnums=(2, 3))
+@jit
 def compute_convection_v(v, u_at_v, dx, dy):
     """
     Computes the convection term for v-momentum (Equation A13).

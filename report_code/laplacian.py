@@ -3,7 +3,7 @@ import jax.numpy as jnp
 from functools import partial
 from jax import jit
 
-@partial(jit, static_argnums=(1, 2))
+@jit
 def compute_laplacian_u(u, dx, dy):
     """
     Computes laplacian for u-momentum
@@ -22,7 +22,7 @@ def compute_laplacian_u(u, dx, dy):
 
     return laplacian
 
-@partial(jit, static_argnums=(1, 2))
+@jit
 def compute_laplacian_v(v, dx, dy):
     """
     Computes laplacian for v-momentum
