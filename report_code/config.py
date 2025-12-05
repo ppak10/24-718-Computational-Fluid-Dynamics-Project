@@ -1,38 +1,38 @@
 from pint import Quantity
 from typing import cast
+import numpy as np
 
 class Config():
     def __init__(self):
         # Mesh
-        self.x_domain = Quantity(3000, "microns") # Lx
-        self.y_domain = Quantity(3000, "microns") # Ly
+        self.x_domain = Quantity(3, "mm")  # Lx
+        self.y_domain = Quantity(3, "mm")  # Ly
 
         self.x_center = self.x_domain / 2
         self.y_center = self.y_domain / 2
 
-        self.x_step = Quantity(100, "microns") # dx
-        self.y_step = Quantity(100, "microns") # dy
+        self.x_step = Quantity(50, "microns")  # dx
+        self.y_step = Quantity(50, "microns")  # dy
 
         # Time
-        self.time_step_max = Quantity(0.5, "s") # t_max
-        self.time_step = Quantity(1e-6, "s") # dt
+        self.time_step_max = Quantity(0.5, "s")
+        self.time_step = Quantity(0.00002, "s")  # dt = 20 microseconds
 
         # Material
-        # k = Quantity(6.7, "W/mK")
-        # Q = Quantity(1000, "W")
+        self.density = Quantity(4430, "kg/m^3")  # rho
+        self.mu = Quantity(0.00476, "Pa.s")  # dynamic viscosity
 
-        self.density = Quantity(4430, "kg/m^3")
-        self.mu = Quantity(0.00476, "Pa.s")
+        self.temperature_initial = Quantity(500, "K")  # Tpre
+        self.temperature_melt = Quantity(700, "K")  # tMelt
+        
+        # Thermal properties
+        self.alpha = Quantity(2e-6, "m^2/s")  # thermal diffusivity
+        self.k = Quantity(6.7, "W/m/K")  # thermal conductivity
+        
+        # Heat source (gaussian) 
+        self.Q = Quantity(1000, "W")  # total power
+        self.sigma = Quantity(200, "microns")  # Gaussian width
+        
+        # Marangoni
+        self.dSigma_dT = Quantity(-1.9e-4, "N/m/K")  # surface tension gradient
 
-        self.temperature_initial = Quantity(500, "K")
-        self.temperature_melt = Quantity(700, "K")
-        #
-        # q = 1
-        #
-        # alpha = Quantity(2*(10**-6), "m^2/s")
-        # sigma = Quantity(0.000025, "m")
-        # sigma_d = Quantity(-1.9e-4, "N/m.K")
-        #
-        # tol = 1e-5
-        # solver_id = 5
-        #

@@ -5,11 +5,13 @@ from jax import lax, jit
 from typing import cast
 from tqdm.rich import tqdm
 
-from .boundary_conditions import apply_boundary_conditions
+from .boundary_conditions import apply_boundary_conditions, apply_boundary_conditions_with_marangoni
 from .config import Config
 from .convection import compute_convection_u, compute_convection_v
+from .gaussian import compute_gaussian_heat_flux
 from .laplacian import compute_laplacian_u, compute_laplacian_v
 from .mask import apply_liquid_mask
+from .temperature import update_temperature
 from .utils import interpolate_velocity
 
 
@@ -29,12 +31,19 @@ def run():
     Ny = int(Ly / dy)
     Nt = int(t_max / dt)
 
-    STEPS = min(1000, Nt)
+    # STEPS = min(5000, Nt)
+    STEPS = 10000
+    
+    alpha = cast(float, config.alpha.to("m^2/s").magnitude)
+    Q = cast(float, config.Q.to("W").magnitude)
+    sigma = cast(float, config.sigma.to("m").magnitude)
+    dSigma_dT = cast(float, config.dSigma_dT.to("N/m/K").magnitude)
 
-
+    Neu_BC = compute_gaussian_heat_flux(Lx, Nx, dx, Q, sigma)
 
     rho = cast(float, config.density.to("kg/m^3").magnitude)
     mu = cast(float, config.mu.to("Pa.s").magnitude)
+    k = cast(float, config.k.to("W/m/K").magnitude)
     nu = mu / rho
 
     T_melt = cast(float, config.temperature_melt.to("K").magnitude)
@@ -55,36 +64,36 @@ def run():
     # # Temperature field at cell centers
     # T = jnp.ones((Nx + 1, Ny + 1)) * T_initial
 
+    # Initialize temperature (all at T_initial)
+    T = jnp.ones((Nx + 1, Ny + 1)) * T_initial
+    # Apply initial top BC
+    T = T.at[:, -1].set(T[:, -2] + dy * Neu_BC)
+
     # Temperature field with hot spot
-    x = jnp.linspace(0, Lx, Nx+1)
-    y = jnp.linspace(0, Ly, Ny+1)
-    X, Y = jnp.meshgrid(x, y, indexing='ij')
+    # x = jnp.linspace(0, Lx, Nx+1)
+    # y = jnp.linspace(0, Ly, Ny+1)
+    # X, Y = jnp.meshgrid(x, y, indexing='ij')
     
-    x0, y0 = Lx/2, Ly/2
-    sigma = 0.0005  # 0.5 mm
-    T_peak = 1500.0  # K
-    
-    T = T_initial + (T_peak - T_initial) * jnp.exp(-((X-x0)**2 + (Y-y0)**2) / (2*sigma**2))
+    # x0, y0 = Lx/2, Ly/2
+    # sigma = 0.0005  # 0.5 mm
+    # T_peak = 1500.0  # K
+    #
+    # T = T_initial + (T_peak - T_initial) * jnp.exp(-((X-x0)**2 + (Y-y0)**2) / (2*sigma**2))
 
     # u-velocity along vertical faces (i + 1/2, j)
     u = jnp.zeros((Nx, Ny + 1))
-    u_no_p = jnp.zeros((Nx, Ny + 1))
-    print(u.shape)
 
     # v-velocity along vertical faces (i, j + 1/2)
     v = jnp.zeros((Nx + 1, Ny))
-    v_no_p = jnp.zeros((Nx + 1, Ny))
-    print(v.shape)
 
     max_iter_poisson = 1000
 
     print("Starting simulation...")
     for n in tqdm(range(STEPS)):
         # Single timestep
-        u, v, p = timestep(u, v, p, T, rho, nu, T_melt, dx, dy, dt, max_iter_poisson)
+        u, v, p = timestep(u, v, p, T, rho, nu, T_melt, dx, dy, dt, max_iter_poisson, mu, dSigma_dT)
 
-        # TODO: Update temperature (thermal solver)
-        # T = update_temperature(T, u, v, ...)
+        T = update_temperature(T, u, v, alpha, dt, dx, dy, Neu_BC, T_initial, k)
 
     print("Simulation complete!")
 
@@ -128,20 +137,40 @@ def run():
 
     return u, v, p, T
 
-
-@partial(jit, static_argnums=(10,))
-def timestep(u, v, p, T, rho, nu, T_melt, dx, dy, dt, max_iter_poisson):
+@partial(jit, static_argnums=(10, ))
+def timestep(u, v, p, T, rho, nu, T_melt, dx, dy, dt, max_iter_poisson, mu, dSigma_dT):
+    # Step 1: Provisional velocity
     u_star, v_star = compute_provisional_velocity(u, v, nu, T, T_melt, rho, dx, dy, dt)
     u_star, v_star = apply_liquid_mask(u_star, v_star, T, T_melt)
-    u_star, v_star = apply_boundary_conditions(u_star, v_star, T, T_melt)
-
+    u_star, v_star = apply_boundary_conditions_with_marangoni(
+        u_star, v_star, T, T_melt, rho, mu, dx, dy, dt, dSigma_dT
+    )
+    
+    # Step 2: Pressure
     p_new = solve_pressure(u_star, v_star, p, rho, dx, dy, dt, max_iter_poisson)
-
+    
+    # Step 3: Velocity correction
     u_new, v_new = correct_velocity(u_star, v_star, p_new, rho, dx, dy, dt)
     u_new, v_new = apply_liquid_mask(u_new, v_new, T, T_melt)
-    u_new, v_new = apply_boundary_conditions(u_new, v_new, T, T_melt)
-
+    u_new, v_new = apply_boundary_conditions_with_marangoni(
+        u_new, v_new, T, T_melt, rho, mu, dx, dy, dt, dSigma_dT
+    )
+    
     return u_new, v_new, p_new
+
+# @partial(jit, static_argnums=(10,))
+# def timestep(u, v, p, T, rho, nu, T_melt, dx, dy, dt, max_iter_poisson):
+#     u_star, v_star = compute_provisional_velocity(u, v, nu, T, T_melt, rho, dx, dy, dt)
+#     u_star, v_star = apply_liquid_mask(u_star, v_star, T, T_melt)
+#     u_star, v_star = apply_boundary_conditions(u_star, v_star, T, T_melt)
+#
+#     p_new = solve_pressure(u_star, v_star, p, rho, dx, dy, dt, max_iter_poisson)
+#
+#     u_new, v_new = correct_velocity(u_star, v_star, p_new, rho, dx, dy, dt)
+#     u_new, v_new = apply_liquid_mask(u_new, v_new, T, T_melt)
+#     u_new, v_new = apply_boundary_conditions(u_new, v_new, T, T_melt)
+#
+#     return u_new, v_new, p_new
 
 
 @jit
