@@ -61,7 +61,6 @@ def update_temperature(T, u, v, alpha, dt, dx, dy, Neu_BC, T_initial, k):
     T_new = T_new.at[0, :].set(T_initial)   # Left
     T_new = T_new.at[-1, :].set(T_initial)  # Right
     
-    # T_new = T_new.at[:, -1].set(T_new[:, -2] + dy * Neu_BC / k)
     T_new = T_new.at[:, -1].set(T_new[:, -2] + dt * Neu_BC)
     
     return T_new

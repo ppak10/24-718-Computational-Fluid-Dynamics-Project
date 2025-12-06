@@ -1,6 +1,4 @@
 from pint import Quantity
-from typing import cast
-import numpy as np
 
 class Config():
     def __init__(self):
@@ -20,14 +18,13 @@ class Config():
 
         # Material
         self.density = Quantity(4430, "kg/m^3")  # rho
-        self.mu = Quantity(0.00476, "Pa.s")  # dynamic viscosity
+        self.viscosity = Quantity(0.00476, "Pa.s")
+        self.thermal_diffusivity = Quantity(2e-6, "m^2/s")
+        self.thermal_conductivity = Quantity(6.7, "W/m/K")
 
+        # Temperature
         self.temperature_initial = Quantity(500, "K")  # Tpre
         self.temperature_melt = Quantity(700, "K")  # tMelt
-        
-        # Thermal properties
-        self.alpha = Quantity(2e-6, "m^2/s")  # thermal diffusivity
-        self.k = Quantity(6.7, "W/m/K")  # thermal conductivity
         
         # Heat source (gaussian) 
         self.Q = Quantity(1000, "W")  # total power

@@ -2,8 +2,6 @@ import jax.numpy as jnp
 
 from jax import jit
 
-from functools import partial
-
 @jit
 def apply_liquid_mask(u, v, T, T_melt):
     """
