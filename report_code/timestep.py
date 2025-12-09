@@ -75,8 +75,6 @@ def solve_pressure(u_star, v_star, p_init, rho, dx, dy, dt):
 
         p_new = p
 
-        print(((p[2:, 1:-1] + p[:-2, 1:-1]) / dx2 + (p[1:-1, 2:] + p[1:-1, :-2]) / dy2).shape, rhs_internal.shape)
-
 
         laplacian = ((p[2:, 1:-1] + p[:-2, 1:-1]) / dx2 + 
                      (p[1:-1, 2:] + p[1:-1, :-2]) / dy2) - rhs_internal

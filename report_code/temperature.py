@@ -3,9 +3,6 @@ from jax import jit
 
 @jit
 def update_temperature(T, u, v, alpha, dt, dx, dy, Neu_BC, T_initial, k):
-    Nx = u.shape[0] - 1
-    Ny = v.shape[1] - 1
-    
     beta_x = alpha * dt / dx**2
     beta_y = alpha * dt / dy**2
     

@@ -4,15 +4,20 @@ from jax import jit
 @jit
 def apply_boundary_conditions(u, v, T, T_melt, rho, mu, dx, dy, dt, dSigma_dT):
     
-    Nx_cells = u.shape[0] - 1
-    
-    # No-Slip Boundary Conditions (Bottom, Left, Right, v-Top)
+    # No-Slip Boundary Conditions
+    # Bottom
     u = u.at[:, 0].set(0.0) 
     v = v.at[:, 0].set(0.0)
+
+    # Left
     u = u.at[0, :].set(0.0)
     v = v.at[0, :].set(0.0)
+
+    # Right
     u = u.at[-1, :].set(0.0)
     v = v.at[-1, :].set(0.0)
+
+    # Top
     v = v.at[:, -1].set(0.0)
     
     # Marangoni Stress Balance at Top Surface (u-velocity)
