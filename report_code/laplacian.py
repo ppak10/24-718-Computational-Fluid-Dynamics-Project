@@ -6,11 +6,6 @@ from jax import jit
 def compute_laplacian_u(u, dx, dy):
     """
     Computes laplacian for u-momentum
-
-    Args:
-        u: (Nx, Ny + 1)
-        dx: grid spacing in x
-        dy: grid spacing in y
     """
 
     laplacian = jnp.zeros_like(u)
@@ -25,11 +20,6 @@ def compute_laplacian_u(u, dx, dy):
 def compute_laplacian_v(v, dx, dy):
     """
     Computes laplacian for v-momentum
-
-    Args:
-        v: (Nx + 1, Ny)
-        dx: grid spacing in x
-        dy: grid spacing in y
     """
 
     laplacian = jnp.zeros_like(v)

@@ -4,7 +4,7 @@ import sys
 from typing import cast
 from tqdm.rich import tqdm
 
-from .boundary_conditions import apply_boundary_conditions_with_marangoni
+from .boundary_conditions import apply_boundary_conditions
 from .config import Config
 from .gaussian import compute_gaussian_heat_flux
 from .mask import apply_liquid_mask
@@ -49,20 +49,16 @@ def run_simulation():
     T_melt = cast(float, config.temperature_melt.to("K").magnitude)
     T_init = cast(float, config.temperature_initial.to("K").magnitude)
 
-    # Pressure at cell centers
-    p = jnp.zeros((Nx + 1, Ny + 1))
+    # Staggered Grid
+    p = jnp.zeros((Nx + 2, Ny + 2))
+    T = jnp.ones((Nx + 2, Ny + 2)) * T_init
 
-    # Initialize temperature (all at T_initial)
-    T = jnp.ones((Nx + 1, Ny + 1)) * T_init
+    print(f"T array shape after initialization: {T.shape}")
+    u = jnp.zeros((Nx + 1, Ny))
+    v = jnp.zeros((Nx, Ny + 1))
 
     # Apply initial top BC
-    T = T.at[:, -1].set(T[:, -2] + dy * Neu_BC)
-
-    # u-velocity along vertical faces (i + 1/2, j)
-    u = jnp.zeros((Nx, Ny + 1))
-
-    # v-velocity along vertical faces (i, j + 1/2)
-    v = jnp.zeros((Nx + 1, Ny))
+    # T = T.at[:, -1].set(T[:, -2] + dy * Neu_BC)
 
     # Stability check
     CFL = max(nu * dt / dx**2, nu * dt / dy**2)
@@ -85,7 +81,7 @@ def run_simulation():
         u, v = apply_liquid_mask(u, v, T, T_melt)
 
         # Step 4: Apply marangoni to final velocity
-        u, v = apply_boundary_conditions_with_marangoni(
+        u, v = apply_boundary_conditions(
             u, v, T, T_melt, rho, mu, dx, dy, dt, dSigma_dT
         )
 

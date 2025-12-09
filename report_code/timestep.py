@@ -12,25 +12,14 @@ MAX_ITER_POISSON = 1000
 def compute_provisional_velocity(u, v, nu, dx, dy, dt):
     """
     Computes the velocity components without pressure gradient.
-
-    Args:
-        u: (Nx, Ny + 1)
-        v: (Nx + 1, Ny)
-        nu: viscosity
-        T: (Nx + 1, Ny + 1)
-        T_melt: Kelvin
-        rho: density
-        dx: grid spacing
-        dy: grid spacing
-        dt: time step
     """
 
-    Nx = u.shape[0]
-    Ny = v.shape[1]
+    Nx = u.shape[0] - 1
+    Ny = v.shape[1] - 1
 
     # u*
     # Interpolate v to u-location
-    v_at_u = interpolate_velocity(v, "v", Nx, Ny)
+    v_at_u = interpolate_velocity(v, "u", Nx, Ny)
 
     # Compute convection and diffusion
     conv_u = compute_convection_u(u, v_at_u, dx, dy)
@@ -41,7 +30,7 @@ def compute_provisional_velocity(u, v, nu, dx, dy, dt):
 
     # v*
     # Interpolate u to v-location
-    u_at_v = interpolate_velocity(u, "u", Nx, Ny)
+    u_at_v = interpolate_velocity(u, "v", Nx, Ny)
 
     # Compute convection and diffusion
     conv_v = compute_convection_v(v, u_at_v, dx, dy)
@@ -68,15 +57,11 @@ def solve_pressure(u_star, v_star, p_init, rho, dx, dy, dt):
         max_iterations
     """
 
-    Nx = u_star.shape[0]
-    Ny = v_star.shape[1]
+    div_u = (u_star[1:, :] - u_star[:-1, :]) / dx
+    div_v = (v_star[:, 1:] - v_star[:, :-1]) / dy
 
-    rhs = jnp.zeros((Nx + 1, Ny + 1))
-
-    div_u = (u_star[1:, 1:-1] - u_star[:-1, 1:-1]) / dx
-    div_v = (v_star[1:-1, 1:] - v_star[1:-1, :-1]) / dy
-
-    rhs = rhs.at[1:-1, 1:-1].set((rho / dt) * (div_u + div_v))
+    # rhs = rhs.at[1:-1, 1:-1].set((rho / dt) * (div_u + div_v))
+    rhs_internal = (rho / dt) * (div_u + div_v)
 
     dx2 = dx * dx
     dy2 = dy * dy
@@ -85,17 +70,19 @@ def solve_pressure(u_star, v_star, p_init, rho, dx, dy, dt):
 
     def jacobi_iteration(p, _):
         """
-        single jacobi iteration
+        Single jacobi iteration for internal pressure cells
         """
 
-        p_new = jnp.zeros_like(p)
+        p_new = p
+
+        print(((p[2:, 1:-1] + p[:-2, 1:-1]) / dx2 + (p[1:-1, 2:] + p[1:-1, :-2]) / dy2).shape, rhs_internal.shape)
 
 
         laplacian = ((p[2:, 1:-1] + p[:-2, 1:-1]) / dx2 + 
-                     (p[1:-1, 2:] + p[1:-1, :-2]) / dy2 - 
-                     rhs[1:-1, 1:-1])
-        
+                     (p[1:-1, 2:] + p[1:-1, :-2]) / dy2) - rhs_internal
+
         p_new = p_new.at[1:-1, 1:-1].set(laplacian / factor)
+
         
         # Boundary conditions
         p_new = p_new.at[0, :].set(p_new[1, :])      # Left
@@ -126,37 +113,28 @@ def correct_velocity(u_star, v_star, p, rho, dx, dy, dt):
     
     # Pressure gradient for u
     dpdx = (p[1:, 1:-1] - p[:-1, 1:-1]) / dx
-    u = u.at[:, 1:-1].set(u_star[:, 1:-1] - (dt / rho) * dpdx)
+    u = u.at[:, :].set(u_star - (dt / rho) * dpdx)
     
     # Pressure gradient for v
     dpdy = (p[1:-1, 1:] - p[1:-1, :-1]) / dy
-    v = v.at[1:-1, :].set(v_star[1:-1, :] - (dt / rho) * dpdy)
+    v = v.at[:, :].set(v_star - (dt / rho) * dpdy)
     
     return u, v
 
 @partial(jit, static_argnums=(1, 2, 3))
-def interpolate_velocity(velocity, direction: str, Nx: int, Ny: int):
+def interpolate_velocity(velocity, interpolation_direction: str, Nx: int, Ny: int):
     """
-    Interpolates v from (i, j+1/2) to (i+1/2, j)
-    Applies equation A9
-    Args:
-        velocity: (Nx + 1, Ny) or (Nx, Ny + 1)
-        direction: "u" or "v"
-        Nx: Grid dimensions
-        Ny: Grid dimensions
-
-    Returns:
-        velocity_interpolated (Nx, Ny + 1) or (Nx + 1, Ny)
+    Interpolates velocity, Applies equation A9
     """
 
     velocity_avg = 0.25 * (velocity[:-1, :-1] + velocity[:-1, 1:] + velocity[1:, :-1] + velocity[1:, 1:])
-    if direction == "v":
-        velocity_interpolated = jnp.zeros((Nx, Ny + 1))
-        velocity_interpolated = velocity_interpolated.at[:, 1:-1].set(velocity_avg)
-
-    elif direction == "u":
+    if interpolation_direction == "u":
         velocity_interpolated = jnp.zeros((Nx + 1, Ny))
         velocity_interpolated = velocity_interpolated.at[1:-1, :].set(velocity_avg)
+
+    elif interpolation_direction == "v":
+        velocity_interpolated = jnp.zeros((Nx, Ny + 1))
+        velocity_interpolated = velocity_interpolated.at[:, 1:-1].set(velocity_avg)
 
     return velocity_interpolated
 

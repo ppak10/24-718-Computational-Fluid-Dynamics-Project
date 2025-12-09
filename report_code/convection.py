@@ -6,12 +6,6 @@ from jax import jit
 def compute_convection_u(u, v_at_u, dx, dy):
     """
     Computes the convection term for u-momentum (Equation A13).
-
-    Args:
-        u: (Nx, Ny + 1)
-        v_at_u: Interpolated terms for v (Nx, Ny + 1)
-        dx: grid spacing
-        dy: grid spacing
     """
     conv = jnp.zeros_like(u)
 
@@ -30,12 +24,6 @@ def compute_convection_u(u, v_at_u, dx, dy):
 def compute_convection_v(v, u_at_v, dx, dy):
     """
     Computes the convection term for v-momentum (Equation A13).
-
-    Args:
-        v: (Nx + 1, Ny)
-        v_at_u: Interpolated terms for v (Nx + 1, Ny)
-        dx: grid spacing
-        dy: grid spacing
     """
     conv = jnp.zeros_like(v)
 
