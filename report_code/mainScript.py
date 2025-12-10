@@ -139,4 +139,4 @@ v_plot[:-1, :] = v[:,:,-1]
 print(u_plot.shape, v_plot.shape)
 
 tempPlots.VelocityField(u_x,v_y,u_plot,v_plot,q)
-tempPlots.stream_plot(u_x,v_y,u_plot,v_plot,q)
+tempPlots.stream_plot(x,y,u[:,:,-1], v[:,:,-1],q)

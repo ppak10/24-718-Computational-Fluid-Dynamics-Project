@@ -22,6 +22,9 @@ def TempFieldTimeStep(u, v, alpha, dt, dx, dy, Nx, Ny, T, Neu_BC, Tpre):
     num_timesteps: number of time steps
     """
 
+    u = 0.5 * (u[1:, :] + u[:-1, :])
+    v = 0.5 * (v[:, 1:] + v[:, -1:])
+
     beta_x = alpha*dt/(dx**2)
     beta_y = alpha*dt/(dy**2)
 

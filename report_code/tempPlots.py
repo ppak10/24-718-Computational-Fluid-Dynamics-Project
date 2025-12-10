@@ -38,11 +38,11 @@ def VelocityMagnitudes(u,v):
 def VelocityField(x,y,u,v,q):
 
     xx, yy = np.meshgrid(x, y)
-    u = np.transpose(u)
-    v = np.transpose(v)
+    u = np.transpose(u) * 10
+    v = np.transpose(v) * 10
 
     plt.figure()
-    plt.quiver(xx,yy,u,v, scale= 10, cmap='viridis')
+    plt.quiver(xx,yy,u,v, scale= 0.5, cmap='viridis')
     plt.xlabel('x [m]', fontsize = 14 )
     plt.ylabel('y [m]', fontsize = 14 )
     #plt.title(f'Velocity Vectors at t = 20s, q = {q}', fontsize = 14)
@@ -56,6 +56,9 @@ def VelocityField(x,y,u,v,q):
 
 def stream_plot(x, y, u, v, q):
     xx, yy = np.meshgrid(x, y)
+    u = 0.5 * (u[1:, :] + u[:-1, :])
+    v = 0.5 * (v[:, 1:] + v[:, -1:])
+
     u = np.transpose(u)
     v = np.transpose(v)
 

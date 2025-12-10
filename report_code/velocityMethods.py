@@ -19,8 +19,8 @@ def fractional_step_method(u, v, psi, T, nu, dt, dx, dy, Nx, Ny, q, solverID, to
     u_interpolated = 0.25 * (u[:-1, :-1] + u[:-1, 1:] + u[1:, :-1] + u[1:, 1:]) # (31, 30)
     v_interpolated = 0.25 * (v[:-1, :-1] + v[:-1, 1:] + v[1:, :-1] + v[1:, 1:]) # (30, 31)
 
-    # print("u_interpolated: ", u_interpolated.shape) # (32, 31)
-    # print("v_interpolated: ", v_interpolated.shape) # (31, 32)
+    # print("u_interpolated: ", u_interpolated.shape)
+    # print("v_interpolated: ", v_interpolated.shape)
 
     conv_u = compute_convection_u(u, v_interpolated, dx, dy) # (32, 31)
     conv_v = compute_convection_v(v, u_interpolated, dx, dy) # (31, 32)
