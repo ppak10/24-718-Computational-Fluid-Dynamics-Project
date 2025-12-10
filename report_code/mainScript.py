@@ -16,7 +16,7 @@ if __name__ == "__main__":
     Ly = 0.003  #m
     dx = 0.0001
     dy = 0.0001
-    t_max = 0.5  #s
+    t_max = 2.0  #s
     alpha = 2*(10**-6) #m^2/s
     k = 6.7    #W/mK
     dt = 0.00002
