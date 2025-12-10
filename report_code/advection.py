@@ -2,9 +2,9 @@ import numpy as np
 from numba import jit
 
 @jit
-def compute_convection_u(u, v_interpolated, dx, dy):
+def compute_advection_u(u, v_interpolated, dx, dy):
     """
-    Computes the convection term for u-momentum (Equation A13).
+    Computes the advection term for u-momentum (Equation A13).
     """
     conv = np.zeros_like(u)
 
@@ -30,9 +30,9 @@ def compute_convection_u(u, v_interpolated, dx, dy):
     return conv # (32, 31)
 
 @jit
-def compute_convection_v(v, u_interpolated, dx, dy):
+def compute_advection_v(v, u_interpolated, dx, dy):
     """
-    Computes the convection term for v-momentum (Equation A13).
+    Computes the advection term for v-momentum (Equation A13).
     """
     conv = np.zeros_like(v)
 

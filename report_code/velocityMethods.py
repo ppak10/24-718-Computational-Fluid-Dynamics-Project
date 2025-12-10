@@ -3,14 +3,24 @@ import tempMethods
 
 from numba import jit
 
-from convection import compute_convection_u, compute_convection_v
-from laplacian import compute_laplacian
+from advection import compute_advection_u, compute_advection_v
+from diffusion import compute_diffusion
 
 @jit
 def fractional_step_method(u, v, psi, T, nu, dt, dx, dy, Nx, Ny, q, solverID, tol, mu,dSigma,tMelt,rho):
     """
     Fractional step method for velocity field computation
     """
+
+    T_x = np.zeros_like(u)
+    T_y = np.zeros_like(v)
+
+    T_x[1:-1, :] = 0.5 * (T[:-1, :] + T[1:, :])
+    T_y[:, 1:-1] = 0.5 * (T[:, :-1] + T[:, 1:])
+
+    boolMask_x = T_x > tMelt
+    boolMask_y = T_y > tMelt
+    boolMask_p = T > tMelt
 
     # print("u.shape", u.shape)
     # print("v.shape", v.shape)
@@ -22,14 +32,14 @@ def fractional_step_method(u, v, psi, T, nu, dt, dx, dy, Nx, Ny, q, solverID, to
     # print("u_interpolated: ", u_interpolated.shape)
     # print("v_interpolated: ", v_interpolated.shape)
 
-    conv_u = compute_convection_u(u, v_interpolated, dx, dy) # (32, 31)
-    conv_v = compute_convection_v(v, u_interpolated, dx, dy) # (31, 32)
+    conv_u = compute_advection_u(u, v_interpolated, dx, dy) # (32, 31)
+    conv_v = compute_advection_v(v, u_interpolated, dx, dy) # (31, 32)
 
     # print("conv_u: ", conv_u.shape)
     # print("conv_v: ", conv_v.shape)
 
-    lap_u = compute_laplacian(u, dx, dy) # (32, 31)
-    lap_v = compute_laplacian(v, dx, dy) # (31, 32)
+    lap_u = compute_diffusion(u, dx, dy) # (32, 31)
+    lap_v = compute_diffusion(v, dx, dy) # (31, 32)
 
     # print("lap_u: ", lap_u.shape)
     # print("lap_v: ", lap_v.shape)
@@ -103,6 +113,10 @@ def fractional_step_method(u, v, psi, T, nu, dt, dx, dy, Nx, Ny, q, solverID, to
 
     # Marangoni surface velocity
     u[:, -1] = tempMethods.surfaceVelocity(u, T, mu, dx, dt, dSigma, tMelt, rho)
+
+    u = u * boolMask_x
+    v = v * boolMask_y
+    p = p * boolMask_p
 
     return p, u, v 
 
