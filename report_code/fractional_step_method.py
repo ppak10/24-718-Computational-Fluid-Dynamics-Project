@@ -136,35 +136,38 @@ def fsm(u, v, p, T, nu, dt, dx, dy, mu,dSigma,tMelt,rho):
     # p = PoissonIterativeSolver(p, rhs, 1e-5, dx, solver_id)
 
     # print("p", p.shape)
-    pTemp = np.copy(p)
-    Nx = len(p[:,0])-1
-    Ny = len(p[0,:])-1
-    w = 1.75
+    factor = 2.0 / (dx * dx) + 2.0 / (dy * dy)
 
     iterations = 0
     error = 1
     tol = 1e-4
     while error > tol and iterations < 2000:
     # while error > tol:
+        term_1 = (p[2:, 1:-1] + p[:-2, 1:-1]) / (dx * dx) # (29, 29)
+        # term_1 = (p[2:, :] + p[:-2, :]) / (dx * dx) # (29, 31)
+        # print("term_1", term_1.shape)
+        term_2 = (p[1:-1, 2:] + p[1:-1, :-2]) / (dy * dy) # (29, 29)
+        # term_2 = (p[:, 2:] + p[:, :-2]) / (dy * dy) # (31, 29)
+        # print("term_2", term_2.shape)
 
-        for j in range(Ny-1):
-                for i in range(Nx-1):
-                    pTilde = 0.25*(p[i,j+1]+pTemp[i+2,j+1]+p[i+1,j]+pTemp[i+1,j+2]) + 0.25*rhs[i+1,j+1]*dx**2
-                    p[i+1,j+1] = pTemp[i+1,j+1] + w*(pTilde - pTemp[i+1,j+1])
+        lap = term_1 + term_2 - rhs_internal
+        # print("lap", lap.shape)
+
+        psi_new = p.copy()
+        psi_new[1:-1, 1:-1] = lap / factor
 
         # Boundary conditions
         # psi_new[0, :] = psi_new[1, :]      # Left
         # psi_new[-1, :] = psi_new[-2, :]    # Right
         # psi_new[:, 0] = psi_new[:, 1]      # Bottom
-        p[:, -1] = p[:, -2]    # Top
+        psi_new[:, -1] = psi_new[:, -2]    # Top
 
         iterations += 1
 
-        error = np.linalg.norm(pTemp - p)
+        error = np.linalg.norm(psi_new - p)
 
-        pTemp = np.copy(p)
+        p = np.copy(psi_new)
     print(error, iterations)
-
 
     # for _ in range(1000):
     #     term_1 = (p[2:, 1:-1] + p[:-2, 1:-1]) / (dx * dx) # (29, 29)
