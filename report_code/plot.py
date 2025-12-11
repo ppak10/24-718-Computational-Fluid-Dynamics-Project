@@ -12,6 +12,7 @@ def plot_timestep(timestep_dir, Lx, Ly):
     u = np.load(os.path.join(timestep_dir, "u.npy"))
     v = np.load(os.path.join(timestep_dir, "v.npy"))
     T = np.load(os.path.join(timestep_dir, "T.npy"))
+    p = np.load(os.path.join(timestep_dir, "p.npy"))
 
     u_interpolated = 0.5 * (u[1:, :] + u[:-1, :])
     v_interpolated = 0.5 * (v[:, 1:] + v[:, :-1])
@@ -28,6 +29,25 @@ def plot_timestep(timestep_dir, Lx, Ly):
     # Create plots subdirectory
     plots_dir = os.path.join(timestep_dir, "plots")
     os.makedirs(plots_dir, exist_ok=True)
+
+    # Melt pool contour plot
+    plt.figure()
+    t_melt = 700
+    plt.contour(x, y, np.transpose(T), [t_melt])
+    # plt.colorbar(label='Temperature [K]')
+    plt.xlabel('x [m]')
+    plt.ylabel('y [m]')
+    plt.savefig(os.path.join(plots_dir, "melt_pool.png"))
+    plt.close()
+
+    # pressure contour plot
+    plt.figure()
+    plt.contourf(x, y, np.transpose(p))
+    plt.colorbar(label='Pressure [Pa]')
+    plt.xlabel('x [m]')
+    plt.ylabel('y [m]')
+    plt.savefig(os.path.join(plots_dir, "pressure.png"))
+    plt.close()
 
     # Temperature contour plot
     plt.figure()
@@ -51,19 +71,9 @@ def plot_timestep(timestep_dir, Lx, Ly):
     plt.savefig(os.path.join(plots_dir, "velocity_magnitude.png"))
     plt.close()
 
-    # Quiver
-    plt.figure()
-    plt.quiver(xx, yy, u_T, v_T, scale=0.5, cmap='viridis')
-    plt.xlabel('x [m]', fontsize=14)
-    plt.ylabel('y [m]', fontsize=14)
-    plt.tick_params(labelsize=12)
-    plt.ylim([0, Ly])
-    plt.xlim([0, Lx])
-    plt.savefig(os.path.join(plots_dir, "quiver.png"))
-    plt.close()
-
     # Stream
     plt.figure()
+    plt.contour(x, y, np.transpose(T), [t_melt])
     plt.streamplot(xx, yy, u_T, v_T, color=np.sqrt(u_T*u_T + v_T*v_T),
                    density=1.5, linewidth=1.5, cmap='viridis')
     plt.colorbar(label='velocity [m/s]')

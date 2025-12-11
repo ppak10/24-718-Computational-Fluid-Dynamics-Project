@@ -15,25 +15,25 @@ if __name__ == "__main__":
     Lx = 0.003  #m
     Ly = 0.003  #m
 
-    # dx = 0.0001
-    # dy = 0.0001
+    dx = 0.0001
+    dy = 0.0001
 
-    dx = 0.00005
-    dy = 0.00005
+    # dx = 0.00005
+    # dy = 0.00005
 
     # dx = 0.00002
     # dy = 0.00002
 
     # t_max = 2.0  #s
-    # t_max = 0.5  #s
-    t_max = 0.1  #s
+    t_max = 0.5  #s
+    # t_max = 0.1  #s
     alpha = 2*(10**-6) #m^2/s
     k = 6.7    #W/mK
 
     save_timestep = 10000
 
-    # dt = 0.00002
-    dt = 0.00001
+    dt = 0.00002
+    # dt = 0.00001
     # dt = 0.000004
 
     Q = 1000  #W
@@ -45,7 +45,8 @@ if __name__ == "__main__":
     tMelt = 700 # K
     rho = 4430 # kg/m^3
     mu = 0.00476 # Pa.s
-    dSigma = -1.9e-4 # N/m.K
+    # dSigma = -1.9e-4 # N/m.K
+    dSigma = 1.9e-4 # N/m.K reverse flow
 
     nu = mu/rho
 
@@ -69,7 +70,7 @@ if __name__ == "__main__":
 
     #print(Neu_BC)
 
-    To = np.ones([Nx+1, Ny+1]) * Tpre
+g   To = np.ones([Nx+1, Ny+1]) * Tpre
 
     To[:, Ny] = To[:, Ny-1] + (dt * Neu_BC)
 
@@ -106,7 +107,7 @@ for n in tqdm(range(num_timesteps)):
     T_new = tempMethods.TempFieldTimeStep(u, v, alpha, dt, dx, dy, Nx, Ny, T, Neu_BC, Tpre)
     u, v, T, p = u_new, v_new, T_new, p_new
 
-    if n % save_timestep == 0 | n == num_timesteps - 1:
+    if n % save_timestep == 0 or n == num_timesteps - 1:
         timestep_dir = os.path.join(run_dir, str(n+1).zfill(zfill_width))
         os.makedirs(timestep_dir, exist_ok=True)
 
