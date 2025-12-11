@@ -1,6 +1,7 @@
 import numpy as np
 
 from numba import jit
+from velocityMethods import PoissonIterativeSolver
 
 @jit
 def surfaceVelocity(u,T,mu,dx,dt,dSigma,tMelt,rho):
@@ -71,7 +72,7 @@ def compute_diffusion(v, dx, dy):
     return diffusion
 
 @jit
-def fsm(u, v, psi, T, nu, dt, dx, dy, mu,dSigma,tMelt,rho):
+def fsm(u, v, p, T, nu, dt, dx, dy, mu,dSigma,tMelt,rho):
     """
     Fractional step method for velocity field computation
     """
@@ -96,20 +97,20 @@ def fsm(u, v, psi, T, nu, dt, dx, dy, mu,dSigma,tMelt,rho):
     # print("u_interpolated: ", u_interpolated.shape)
     # print("v_interpolated: ", v_interpolated.shape)
 
-    conv_u = compute_advection_u(u, v_interpolated, dx, dy) # (32, 31)
-    conv_v = compute_advection_v(v, u_interpolated, dx, dy) # (31, 32)
+    adv_u = compute_advection_u(u, v_interpolated, dx, dy) # (32, 31)
+    adv_v = compute_advection_v(v, u_interpolated, dx, dy) # (31, 32)
 
     # print("conv_u: ", conv_u.shape)
     # print("conv_v: ", conv_v.shape)
 
-    lap_u = compute_diffusion(u, dx, dy) # (32, 31)
-    lap_v = compute_diffusion(v, dx, dy) # (31, 32)
+    dif_u = compute_diffusion(u, dx, dy) # (32, 31)
+    dif_v = compute_diffusion(v, dx, dy) # (31, 32)
 
     # print("lap_u: ", lap_u.shape)
     # print("lap_v: ", lap_v.shape)
 
-    provisional_u = u + dt * (-conv_u + nu * lap_u) # (32, 31)
-    provisional_v = v + dt * (-conv_v + nu * lap_v) # (31, 32)
+    provisional_u = u + dt * (-adv_u + nu * dif_u) # (32, 31)
+    provisional_v = v + dt * (-adv_v + nu * dif_v) # (31, 32)
 
     # print("provisional_u: ", provisional_u.shape)
     # print("provisional_v: ", provisional_v.shape)
@@ -126,14 +127,22 @@ def fsm(u, v, psi, T, nu, dt, dx, dy, mu,dSigma,tMelt,rho):
     rhs = (rho / dt) * (du_dx + dv_dy) # (31, 31)
     # print("rhs", rhs.shape)
 
-    rhs_internal = rhs[1:-1, 1:-1] # (31, 31)
+    rhs_internal = rhs[1:-1, 1:-1] # (29, 29)
     # print("rhs", rhs.shape)
 
-    p = psi.copy() # (31, 31)
+    # _p = p.copy() # (31, 31)
+
+    solver_id = 5
+    # p = PoissonIterativeSolver(p, rhs, 1e-5, dx, solver_id)
+
     # print("p", p.shape)
     factor = 2.0 / (dx * dx) + 2.0 / (dy * dy)
 
-    for _ in range(1000):
+    iterations = 0
+    error = 1
+    tol = 1e-4
+    while error > tol and iterations < 2000:
+    # while error > tol:
         term_1 = (p[2:, 1:-1] + p[:-2, 1:-1]) / (dx * dx) # (29, 29)
         # term_1 = (p[2:, :] + p[:-2, :]) / (dx * dx) # (29, 31)
         # print("term_1", term_1.shape)
@@ -148,12 +157,39 @@ def fsm(u, v, psi, T, nu, dt, dx, dy, mu,dSigma,tMelt,rho):
         psi_new[1:-1, 1:-1] = lap / factor
 
         # Boundary conditions
-        psi_new[0, :] = psi_new[1, :]      # Left
-        psi_new[-1, :] = psi_new[-2, :]    # Right
-        psi_new[:, 0] = psi_new[:, 1]      # Bottom
+        # psi_new[0, :] = psi_new[1, :]      # Left
+        # psi_new[-1, :] = psi_new[-2, :]    # Right
+        # psi_new[:, 0] = psi_new[:, 1]      # Bottom
         psi_new[:, -1] = psi_new[:, -2]    # Top
 
-        p = psi_new
+        iterations += 1
+
+        error = np.linalg.norm(psi_new - p)
+
+        p = np.copy(psi_new)
+    print(error, iterations)
+
+    # for _ in range(1000):
+    #     term_1 = (p[2:, 1:-1] + p[:-2, 1:-1]) / (dx * dx) # (29, 29)
+    #     # term_1 = (p[2:, :] + p[:-2, :]) / (dx * dx) # (29, 31)
+    #     # print("term_1", term_1.shape)
+    #     term_2 = (p[1:-1, 2:] + p[1:-1, :-2]) / (dy * dy) # (29, 29)
+    #     # term_2 = (p[:, 2:] + p[:, :-2]) / (dy * dy) # (31, 29)
+    #     # print("term_2", term_2.shape)
+    #
+    #     lap = term_1 + term_2 - rhs_internal
+    #     # print("lap", lap.shape)
+    #
+    #     psi_new = p.copy()
+    #     psi_new[1:-1, 1:-1] = lap / factor
+    #
+    #     # Boundary conditions
+    #     psi_new[0, :] = psi_new[1, :]      # Left
+    #     psi_new[-1, :] = psi_new[-2, :]    # Right
+    #     psi_new[:, 0] = psi_new[:, 1]      # Bottom
+    #     psi_new[:, -1] = psi_new[:, -2]    # Top
+    #
+    #     p = psi_new
 
     # print("p: ", p.shape)
 

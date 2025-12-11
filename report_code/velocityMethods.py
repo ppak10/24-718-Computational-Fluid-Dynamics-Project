@@ -106,7 +106,8 @@ def PoissonIterativeSolver(T, omega, tol, dx, solverID):
     w: SOR relaxation factor
     solverID: 3 for Point Jacobi, 4 for Gauss-Seidel, 5 for SOR
     """
-    w = 1.75
+    # w = 1.75
+    w =  1.00
 
     Tref = np.copy(T)
     Nx = len(T[:,0])-1
@@ -160,9 +161,15 @@ def PoissonIterativeSolver(T, omega, tol, dx, solverID):
 
             numIts += 1
 
+
             # Compute error
             error = np.linalg.norm(T-Tref)
             Tref = np.copy(T)
+
+        T[0, :] = T[1, :]      # Left
+        T[-1, :] = T[-2, :]    # Right
+        T[:, 0] = T[:, 1]      # Bottom
+        T[:, -1] = T[:, -2]    # Top
         
 
     return T

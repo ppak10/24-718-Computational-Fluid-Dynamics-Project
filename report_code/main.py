@@ -45,8 +45,8 @@ if __name__ == "__main__":
     tMelt = 700 # K
     rho = 4430 # kg/m^3
     mu = 0.00476 # Pa.s
-    # dSigma = -1.9e-4 # N/m.K
-    dSigma = 1.9e-4 # N/m.K reverse flow
+    dSigma = -1.9e-4 # N/m.K
+    # dSigma = 1.9e-4 # N/m.K reverse flow
 
     nu = mu/rho
 
@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
     #print(Neu_BC)
 
-g   To = np.ones([Nx+1, Ny+1]) * Tpre
+    To = np.ones([Nx+1, Ny+1]) * Tpre
 
     To[:, Ny] = To[:, Ny-1] + (dt * Neu_BC)
 
@@ -105,7 +105,7 @@ zfill_width = len(str(num_timesteps))
 for n in tqdm(range(num_timesteps)):
     p_new, u_new, v_new = fsm(u, v, p, T, nu, dt, dx, dy, mu, dSigma, tMelt, rho)
     T_new = tempMethods.TempFieldTimeStep(u, v, alpha, dt, dx, dy, Nx, Ny, T, Neu_BC, Tpre)
-    u, v, T, p = u_new, v_new, T_new, p_new
+    u, v, T, p = u_new.copy(), v_new.copy(), T_new.copy(), p_new.copy()
 
     if n % save_timestep == 0 or n == num_timesteps - 1:
         timestep_dir = os.path.join(run_dir, str(n+1).zfill(zfill_width))
