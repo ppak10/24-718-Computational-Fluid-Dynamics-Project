@@ -136,41 +136,41 @@ def fsm(u, v, p, T, nu, dt, dx, dy, mu,dSigma,tMelt,rho):
     # p = PoissonIterativeSolver(p, rhs, 1e-5, dx, solver_id)
 
     
-     pTemp = np.copy(p)
+    pTemp = np.copy(p)
     Nx = len(p[:,0])-1
     Ny = len(p[0,:])-1
     w = 1.75
 
-    iterations = 0
-    error = 1
-    tol = 1e-4
-    while error > tol and iterations < 2000:
-    # while error > tol:
-
-        for j in range(Ny-1):
-                for i in range(Nx-1):
-                    pTilde = 0.25*(p[i,j+1]+pTemp[i+2,j+1]+p[i+1,j]+pTemp[i+1,j+2]) + 0.25*rhs[i+1,j+1]*dx**2
-                    p[i+1,j+1] = pTemp[i+1,j+1] + w*(pTilde - pTemp[i+1,j+1])
-
-        j_top = Ny-1
-        j_in  = Ny-2       # interior layer just below top
-
-        for i in range(1, Nx):
-
-            # ghost point: T[i, j_top+1] = T[i, j_in]
-                pghost = pTemp[i, j_in]
-
-            # apply mirrored-value discretization
-                pTilde = 0.25 * (p[i-1, j_top] + pTemp[i+1, j_top] + p[i, j_in] + pghost) + 0.25*rhs[i,j_top]*dx**2
-                T[i, j_top] = pTemp[i, j_top] + w*(pTilde - pTemp[i, j_top])
-
-        iterations += 1
-
-        error = np.linalg.norm(pTemp - p)
-
-        pTemp = np.copy(p)
-    print(error, iterations)
-    """
+    # iterations = 0
+    # error = 1
+    # tol = 1e-4
+    # while error > tol and iterations < 2000:
+    # # while error > tol:
+    #
+    #     for j in range(Ny-1):
+    #             for i in range(Nx-1):
+    #                 pTilde = 0.25*(p[i,j+1]+pTemp[i+2,j+1]+p[i+1,j]+pTemp[i+1,j+2]) - 0.25*rhs[i+1,j+1]*dx**2
+    #                 p[i+1,j+1] = pTemp[i+1,j+1] + w*(pTilde - pTemp[i+1,j+1])
+    #
+    #     j_top = Ny-1
+    #     j_in  = Ny-2       # interior layer just below top
+    #
+    #     for i in range(1, Nx):
+    #
+    #         # ghost point: T[i, j_top+1] = T[i, j_in]
+    #             pghost = pTemp[i, j_in]
+    #
+    #         # apply mirrored-value discretization
+    #             pTilde = 0.25 * (pTemp[i-1, j_top] + pTemp[i+1, j_top] + pTemp[i, j_in] + pghost) - 0.25*rhs[i,j_top]*dx**2
+    #             p[i, j_top] = pTemp[i, j_top] + w*(pTilde - pTemp[i, j_top])
+    #
+    #     iterations += 1
+    #
+    #     error = np.linalg.norm(pTemp - p)
+    #
+    #     pTemp = np.copy(p)
+    # print(error, iterations)
+    # """
     # print("p", p.shape)
     factor = 2.0 / (dx * dx) + 2.0 / (dy * dy)
     
@@ -204,7 +204,7 @@ def fsm(u, v, p, T, nu, dt, dx, dy, mu,dSigma,tMelt,rho):
 
         p = np.copy(psi_new)
     print(error, iterations)
-    """
+    # """
     
     # Apply correct velocity
     # u = np.zeros_like(provisional_u) # (32, 31)

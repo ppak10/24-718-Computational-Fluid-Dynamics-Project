@@ -15,14 +15,14 @@ if __name__ == "__main__":
     Lx = 0.003  #m
     Ly = 0.003  #m
 
-    dx = 0.0001
-    dy = 0.0001
+    # dx = 0.0001
+    # dy = 0.0001
 
     # dx = 0.00005
     # dy = 0.00005
 
-    # dx = 0.00002
-    # dy = 0.00002
+    dx = 0.00002
+    dy = 0.00002
 
     # t_max = 2.0  #s
     # t_max = 0.5  #s
@@ -33,9 +33,9 @@ if __name__ == "__main__":
 
     save_timestep = 10000
 
-    dt = 0.00002
+    # dt = 0.00002
     # dt = 0.00001
-    # dt = 0.000004
+    dt = 0.000004
 
     Q = 1000  #W
     q = 1
@@ -46,8 +46,8 @@ if __name__ == "__main__":
     tMelt = 700 # K
     rho = 4430 # kg/m^3
     mu = 0.00476 # Pa.s
-    dSigma = -1.9e-4 # N/m.K
-    # dSigma = 1.9e-4 # N/m.K reverse flow
+    # dSigma = -1.9e-4 # N/m.K
+    dSigma = 1.9e-4 # N/m.K reverse flow
 
     nu = mu/rho
 
@@ -78,6 +78,9 @@ if __name__ == "__main__":
     T = np.zeros((Nx+1,Ny+1)) 
     T[:,:] = To  
 
+    T_no_velocity = np.zeros((Nx+1,Ny+1)) 
+    T_no_velocity[:,:] = To  
+
     #print(np.transpose(To))
     
     print('Number of points (x-direction): {0:2d} '.format(Nx+1))
@@ -95,6 +98,10 @@ if __name__ == "__main__":
     u = np.zeros((Nx+2,Ny+1))
     v = np.zeros((Nx+1,Ny+2))
 
+    # Initialize velocity field
+    u_conduction = np.zeros((Nx+2,Ny+1))
+    v_conduction = np.zeros((Nx+1,Ny+2))
+
 # TIME LOOP
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -107,6 +114,9 @@ for n in tqdm(range(num_timesteps)):
     p_new, u_new, v_new = fsm(u, v, p, T, nu, dt, dx, dy, mu, dSigma, tMelt, rho)
     T_new = tempMethods.TempFieldTimeStep(u, v, alpha, dt, dx, dy, Nx, Ny, T, Neu_BC, Tpre)
     u, v, T, p = u_new.copy(), v_new.copy(), T_new.copy(), p_new.copy()
+    
+    T_no_velocity = tempMethods.TempFieldTimeStep(u_conduction, v_conduction, alpha, dt, dx, dy, Nx, Ny, T_no_velocity, Neu_BC, Tpre)
+    # u, v, T, p = u_new.copy(), v_new.copy(), T_new.copy(), p_new.copy()
 
     if n % save_timestep == 0 or n == num_timesteps - 1:
         timestep_dir = os.path.join(run_dir, str(n+1).zfill(zfill_width))
@@ -115,5 +125,6 @@ for n in tqdm(range(num_timesteps)):
         np.save(os.path.join(timestep_dir, "u.npy"), u)
         np.save(os.path.join(timestep_dir, "v.npy"), v)
         np.save(os.path.join(timestep_dir, "T.npy"), T)
+        np.save(os.path.join(timestep_dir, "T_no_velocity.npy"), T_no_velocity)
         np.save(os.path.join(timestep_dir, "p.npy"), p)
 
