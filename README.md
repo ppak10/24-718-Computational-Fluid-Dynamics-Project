@@ -5,4 +5,6 @@ Repository for CFD project regarding modeling of melt pool keyhole
 1. Install [`uv`](https://docs.astral.sh/uv/)
 2. Run `uv sync`
 3. Run `uv run main.py`
+4. Run `uv run plot.py`
+- Plots will be inside of timestep folder in run folder.
 

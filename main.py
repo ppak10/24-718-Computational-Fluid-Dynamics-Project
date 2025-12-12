@@ -1,11 +1,11 @@
 import os
 import numpy as np
-import tempMethods
 
 from datetime import datetime
 from tqdm.rich import tqdm
 
 from fractional_step_method import fsm 
+from temperature_method import temperature_field_timestep 
 
 if __name__ == "__main__":
 
@@ -110,11 +110,10 @@ zfill_width = len(str(num_timesteps))
 
 for n in tqdm(range(num_timesteps)):
     p_new, u_new, v_new = fsm(u, v, p, T, nu, dt, dx, dy, mu, dSigma, tMelt, rho)
-    T_new = tempMethods.TempFieldTimeStep(u, v, alpha, dt, dx, dy, Nx, Ny, T, Neu_BC, Tpre)
+    T_new = temperature_field_timestep(u, v, alpha, dt, dx, dy, Nx, Ny, T, Neu_BC, Tpre)
     u, v, T, p = u_new.copy(), v_new.copy(), T_new.copy(), p_new.copy()
     
-    T_no_velocity = tempMethods.TempFieldTimeStep(u_conduction, v_conduction, alpha, dt, dx, dy, Nx, Ny, T_no_velocity, Neu_BC, Tpre)
-    # u, v, T, p = u_new.copy(), v_new.copy(), T_new.copy(), p_new.copy()
+    T_no_velocity = temperature_field_timestep(u_conduction, v_conduction, alpha, dt, dx, dy, Nx, Ny, T_no_velocity, Neu_BC, Tpre)
 
     if n % save_timestep == 0 or n == num_timesteps - 1:
         timestep_dir = os.path.join(run_dir, str(n+1).zfill(zfill_width))
