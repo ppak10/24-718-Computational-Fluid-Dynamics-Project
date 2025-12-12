@@ -21,20 +21,20 @@ if __name__ == "__main__":
     dx = 0.00005
     dy = 0.00005
 
-    dx = 0.00002
-    dy = 0.00002
+    # dx = 0.00002
+    # dy = 0.00002
 
-    # t_max = 2.0  #s
+    t_max = 2.0  #s
     # t_max = 0.5  #s
     # t_max = 1.0 #s
-    t_max = 0.1  #s
+    # t_max = 0.1  #s
     alpha = 2*(10**-6) #m^2/s
     k = 6.7    #W/mK
 
     save_timestep = 10000
 
-    dt = 0.00125
-    # dt = 0.0003125
+    #dt = 0.00125
+    dt = 0.0003125
     # dt = 0.00005
 
     Q = 1000  #W
@@ -46,8 +46,8 @@ if __name__ == "__main__":
     tMelt = 700 # K
     rho = 4430 # kg/m^3
     mu = 0.00476 # Pa.s
-    # dSigma = -1.9e-4 # N/m.K
-    dSigma = 1.9e-4 # N/m.K reverse flow
+    dSigma = -1.9e-4 # N/m.K
+    #dSigma = 1.9e-4 # N/m.K reverse flow
 
     nu = mu/rho
 
