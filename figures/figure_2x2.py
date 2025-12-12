@@ -2,8 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-# Load data from results/2_medium last timestep
-data_dir = "results/2_medium/99999"
+data_dir = "results/3_fine/250000"
 
 p = np.load(os.path.join(data_dir, "p.npy"))
 u = np.load(os.path.join(data_dir, "u.npy"))
@@ -44,24 +43,24 @@ legend_elements = [Line2D([0], [0], color='red', linewidth=2, label='Melt Pool (
 
 # 1. Temperature (top-left)
 ax = axes[0, 0]
-contour_T = ax.contourf(x, y, np.transpose(T), cmap='plasma')
+contour_T = ax.contourf(x, y, np.transpose(T), levels=25, cmap='plasma')
 plt.colorbar(contour_T, ax=ax, label='Temperature [K]')
 melt_contour = ax.contour(x, y, np.transpose(T), [t_melt], colors='red', linewidths=2)
 ax.set_xlabel('x [m]')
 ax.set_ylabel('y [m]')
-ax.set_title('Temperature', fontsize=32)
+ax.set_title('Temperature', fontsize=32, pad=25)
 ax.set_aspect('equal')
 ax.tick_params(direction='in')
 ax.legend(handles=legend_elements, loc='lower left')
 
 # 2. Pressure (top-right)
 ax = axes[0, 1]
-contour_p = ax.contourf(x, y, np.transpose(p))
+contour_p = ax.contourf(x, y, np.transpose(p), levels=25)
 plt.colorbar(contour_p, ax=ax, label='Pressure [Pa]')
 ax.contour(x, y, np.transpose(T), [t_melt], colors='red', linewidths=2)
 ax.set_xlabel('x [m]')
 ax.set_ylabel('y [m]')
-ax.set_title('Pressure', fontsize=32)
+ax.set_title('Pressure', fontsize=32, pad=25)
 ax.set_aspect('equal')
 ax.tick_params(direction='in')
 ax.legend(handles=legend_elements, loc='lower left')
@@ -73,7 +72,7 @@ ax.streamplot(xx, yy, u_T, v_T, color=np.sqrt(u_T*u_T + v_T*v_T),
 ax.contour(x, y, np.transpose(T), [t_melt], colors='red', linewidths=2)
 ax.set_xlabel('x [m]')
 ax.set_ylabel('y [m]')
-ax.set_title('Streamlines', fontsize=32)
+ax.set_title('Streamlines', fontsize=32, pad=25)
 ax.set_ylim([0, Ly])
 ax.set_xlim([0, Lx])
 ax.set_aspect('equal')
@@ -87,7 +86,7 @@ plt.colorbar(im, ax=ax, label='velocity [m/s]')
 ax.contour(x, y, np.transpose(T), [t_melt], colors='red', linewidths=2)
 ax.set_xlabel('x [m]')
 ax.set_ylabel('y [m]')
-ax.set_title('Velocity Magnitude', fontsize=32)
+ax.set_title('Velocity Magnitude', fontsize=32, pad=25)
 ax.set_aspect('equal')
 ax.tick_params(direction='in')
 ax.legend(handles=legend_elements, loc='lower left')
