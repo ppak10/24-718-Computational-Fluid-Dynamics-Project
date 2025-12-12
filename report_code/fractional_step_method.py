@@ -1,7 +1,6 @@
 import numpy as np
 
 from numba import jit
-from velocityMethods import PoissonIterativeSolver
 
 @jit
 def surfaceVelocity(u,T,mu,dx,dt,dSigma,tMelt,rho):
@@ -132,79 +131,31 @@ def fsm(u, v, p, T, nu, dt, dx, dy, mu,dSigma,tMelt,rho):
 
     # _p = p.copy() # (31, 31)
 
-    solver_id = 5
-    # p = PoissonIterativeSolver(p, rhs, 1e-5, dx, solver_id)
-
-    
-     pTemp = np.copy(p)
-    Nx = len(p[:,0])-1
-    Ny = len(p[0,:])-1
+    pTemp = np.copy(p) 
+    Nx = len(p[:,0])
+    Ny = len(p[0,:])
     w = 1.75
 
     iterations = 0
     error = 1
-    tol = 1e-4
-    while error > tol and iterations < 2000:
-    # while error > tol:
+    tol = 1e-5
+    while error > tol and iterations < 3000:
 
-        for j in range(Ny-1):
-                for i in range(Nx-1):
-                    pTilde = 0.25*(p[i,j+1]+pTemp[i+2,j+1]+p[i+1,j]+pTemp[i+1,j+2]) + 0.25*rhs[i+1,j+1]*dx**2
-                    p[i+1,j+1] = pTemp[i+1,j+1] + w*(pTilde - pTemp[i+1,j+1])
-
-        j_top = Ny-1
-        j_in  = Ny-2       # interior layer just below top
-
-        for i in range(1, Nx):
-
-            # ghost point: T[i, j_top+1] = T[i, j_in]
-                pghost = pTemp[i, j_in]
-
-            # apply mirrored-value discretization
-                pTilde = 0.25 * (p[i-1, j_top] + pTemp[i+1, j_top] + p[i, j_in] + pghost) + 0.25*rhs[i,j_top]*dx**2
-                T[i, j_top] = pTemp[i, j_top] + w*(pTilde - pTemp[i, j_top])
+        for j in range(1, Ny):
+                for i in range(1, Nx-1):
+                    if j == Ny-1: # solve for top row (using dp/dy = 0, so the 'upper' (ghost) node is the same as the lower one.)
+                        pTilde = 0.25*(p[i-1,j]+pTemp[i+1,j]+p[i,j-1]+pTemp[i,j-1]) - 0.25*rhs[i,j]*dx**2
+                        p[i,j] = pTemp[i,j] + w*(pTilde - pTemp[i,j])
+                    else: # solve for interior nodes
+                        pTilde = 0.25*(p[i-1,j]+pTemp[i+1,j]+p[i,j-1]+pTemp[i,j+1]) - 0.25*rhs[i,j]*dx**2
+                        p[i,j] = pTemp[i,j] + w*(pTilde - pTemp[i,j])
 
         iterations += 1
 
         error = np.linalg.norm(pTemp - p)
-
         pTemp = np.copy(p)
+
     print(error, iterations)
-    """
-    # print("p", p.shape)
-    factor = 2.0 / (dx * dx) + 2.0 / (dy * dy)
-    
-    iterations = 0
-    error = 1
-    tol = 1e-4
-    while error > tol and iterations < 2000:
-    # while error > tol:
-        term_1 = (p[2:, 1:-1] + p[:-2, 1:-1]) / (dx * dx) # (29, 29)
-        # term_1 = (p[2:, :] + p[:-2, :]) / (dx * dx) # (29, 31)
-        # print("term_1", term_1.shape)
-        term_2 = (p[1:-1, 2:] + p[1:-1, :-2]) / (dy * dy) # (29, 29)
-        # term_2 = (p[:, 2:] + p[:, :-2]) / (dy * dy) # (31, 29)
-        # print("term_2", term_2.shape)
-
-        lap = term_1 + term_2 - rhs_internal
-        # print("lap", lap.shape)
-
-        psi_new = p.copy()
-        psi_new[1:-1, 1:-1] = lap / factor
-
-        # Boundary conditions
-        # psi_new[0, :] = psi_new[1, :]      # Left
-        # psi_new[-1, :] = psi_new[-2, :]    # Right
-        # psi_new[:, 0] = psi_new[:, 1]      # Bottom
-        psi_new[:, -1] = psi_new[:, -2]    # Top
-
-        iterations += 1
-
-        error = np.linalg.norm(psi_new - p)
-
-        p = np.copy(psi_new)
-    print(error, iterations)
-    """
     
     # Apply correct velocity
     # u = np.zeros_like(provisional_u) # (32, 31)
