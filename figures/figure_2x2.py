@@ -1,79 +1,95 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import cm
+import os
 
 # Load data from results/2_medium last timestep
 data_dir = "results/2_medium/99999"
 
-p = np.load(f"{data_dir}/p.npy")
-u = np.load(f"{data_dir}/u.npy")
-v = np.load(f"{data_dir}/v.npy")
-T = np.load(f"{data_dir}/T.npy")
+p = np.load(os.path.join(data_dir, "p.npy"))
+u = np.load(os.path.join(data_dir, "u.npy"))
+v = np.load(os.path.join(data_dir, "v.npy"))
+T = np.load(os.path.join(data_dir, "T.npy"))
+
+# Interpolate velocities to cell centers
+u_interpolated = 0.5 * (u[1:, :] + u[:-1, :])
+v_interpolated = 0.5 * (v[:, 1:] + v[:, :-1])
+
+# Transpose for plotting
+u_T = u_interpolated.T
+v_T = v_interpolated.T
 
 # Calculate velocity magnitude
-# u has shape (Nx+2, Ny+1), v has shape (Nx+1, Ny+2)
-# Need to interpolate to cell centers for proper velocity magnitude
-u_center = 0.5 * (u[1:, :] + u[:-1, :])  # Average adjacent u values
-v_center = 0.5 * (v[:, 1:] + v[:, :-1])  # Average adjacent v values
-vel_mag = np.sqrt(u_center**2 + v_center**2)
+vel_mag = np.sqrt(u_interpolated**2 + v_interpolated**2)
 
 # Grid dimensions
-Nx, Ny = p.shape[0] - 1, p.shape[1] - 1
-Lx, Ly = 0.003, 0.003  # From main.py
+Nx, Ny = T.shape[0] - 1, T.shape[1] - 1
+Lx, Ly = 0.003, 0.003
 x = np.linspace(0, Lx, Nx+1)
 y = np.linspace(0, Ly, Ny+1)
-X, Y = np.meshgrid(x, y, indexing='ij')
+
+xx, yy = np.meshgrid(x, y)
 
 # Melt pool temperature threshold
-tMelt = 700  # K
+t_melt = 700
 
 # Create 2x2 subplot
-fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+fig, axes = plt.subplots(2, 2, figsize=(14, 12), constrained_layout=True)
 
-# 1. Pressure (top-left)
+# Make all subplots have the same physical size
+for ax in axes.flat:
+    ax.set_box_aspect(1)
+
+from matplotlib.lines import Line2D
+legend_elements = [Line2D([0], [0], color='red', linewidth=2, label='Melt Pool (700K)')]
+
+# 1. Temperature (top-left)
 ax = axes[0, 0]
-contour_p = ax.contourf(X, Y, p, levels=50, cmap='RdBu_r')
-plt.colorbar(contour_p, ax=ax, label='Pressure (Pa)')
-ax.set_xlabel('X (m)')
-ax.set_ylabel('Y (m)')
-ax.set_title('Pressure Field')
+contour_T = ax.contourf(x, y, np.transpose(T), cmap='plasma')
+plt.colorbar(contour_T, ax=ax, label='Temperature [K]')
+melt_contour = ax.contour(x, y, np.transpose(T), [t_melt], colors='red', linewidths=2)
+ax.set_xlabel('x [m]')
+ax.set_ylabel('y [m]')
+ax.set_title('Temperature', fontsize=32)
 ax.set_aspect('equal')
+ax.tick_params(direction='in')
+ax.legend(handles=legend_elements, loc='lower left')
 
-# 2. Streamlines (top-right)
+# 2. Pressure (top-right)
 ax = axes[0, 1]
-# Create streamline plot on cell centers
-x_center = 0.5 * (x[1:] + x[:-1])
-y_center = 0.5 * (y[1:] + y[:-1])
-X_center, Y_center = np.meshgrid(x_center, y_center, indexing='ij')
-ax.streamplot(X_center, Y_center, u_center, v_center, density=2, color='k', linewidth=1)
-ax.set_xlabel('X (m)')
-ax.set_ylabel('Y (m)')
-ax.set_title('Streamlines')
+contour_p = ax.contourf(x, y, np.transpose(p))
+plt.colorbar(contour_p, ax=ax, label='Pressure [Pa]')
+ax.contour(x, y, np.transpose(T), [t_melt], colors='red', linewidths=2)
+ax.set_xlabel('x [m]')
+ax.set_ylabel('y [m]')
+ax.set_title('Pressure', fontsize=32)
 ax.set_aspect('equal')
-ax.set_xlim(0, Lx)
-ax.set_ylim(0, Ly)
+ax.tick_params(direction='in')
+ax.legend(handles=legend_elements, loc='lower left')
 
-# 3. Velocity Magnitude (bottom-left)
+# 3. Streamlines (bottom-left)
 ax = axes[1, 0]
-contour_vel = ax.contourf(X_center, Y_center, vel_mag, levels=50, cmap='viridis')
-plt.colorbar(contour_vel, ax=ax, label='Velocity Magnitude (m/s)')
-ax.set_xlabel('X (m)')
-ax.set_ylabel('Y (m)')
-ax.set_title('Velocity Magnitude')
+ax.streamplot(xx, yy, u_T, v_T, color=np.sqrt(u_T*u_T + v_T*v_T),
+               density=1.5, linewidth=1.5, cmap='viridis')
+ax.contour(x, y, np.transpose(T), [t_melt], colors='red', linewidths=2)
+ax.set_xlabel('x [m]')
+ax.set_ylabel('y [m]')
+ax.set_title('Streamlines', fontsize=32)
+ax.set_ylim([0, Ly])
+ax.set_xlim([0, Lx])
 ax.set_aspect('equal')
+ax.tick_params(direction='in')
+ax.legend(handles=legend_elements, loc='lower left')
 
-# 4. Melt Pool Contour (bottom-right)
+# 4. Velocity Magnitude (bottom-right)
 ax = axes[1, 1]
-temp_plot = ax.contourf(X, Y, T, levels=50, cmap='hot')
-plt.colorbar(temp_plot, ax=ax, label='Temperature (K)')
-# Overlay melt pool contour
-contour_melt = ax.contour(X, Y, T, levels=[tMelt], colors='cyan', linewidths=2)
-ax.clabel(contour_melt, inline=True, fontsize=10, fmt='Melt Pool (700K)')
-ax.set_xlabel('X (m)')
-ax.set_ylabel('Y (m)')
-ax.set_title('Temperature & Melt Pool Contour')
+im = ax.imshow(vel_mag.T, origin='lower', cmap='viridis', extent=[0, Lx, 0, Ly])
+plt.colorbar(im, ax=ax, label='velocity [m/s]')
+ax.contour(x, y, np.transpose(T), [t_melt], colors='red', linewidths=2)
+ax.set_xlabel('x [m]')
+ax.set_ylabel('y [m]')
+ax.set_title('Velocity Magnitude', fontsize=32)
 ax.set_aspect('equal')
+ax.tick_params(direction='in')
+ax.legend(handles=legend_elements, loc='lower left')
 
-plt.tight_layout()
-plt.savefig('figures/2x2_plots.png', dpi=300, bbox_inches='tight')
-plt.show()
+plt.savefig('figures/figure_2x2.png', dpi=300, bbox_inches='tight')

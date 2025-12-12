@@ -12,6 +12,7 @@ def plot_timestep(timestep_dir, Lx, Ly):
     u = np.load(os.path.join(timestep_dir, "u.npy"))
     v = np.load(os.path.join(timestep_dir, "v.npy"))
     T = np.load(os.path.join(timestep_dir, "T.npy"))
+    T_no_velocity = np.load(os.path.join(timestep_dir, "T_no_velocity.npy"))
     p = np.load(os.path.join(timestep_dir, "p.npy"))
 
     u_interpolated = 0.5 * (u[1:, :] + u[:-1, :])
@@ -38,6 +39,17 @@ def plot_timestep(timestep_dir, Lx, Ly):
     plt.xlabel('x [m]')
     plt.ylabel('y [m]')
     plt.savefig(os.path.join(plots_dir, "melt_pool.png"))
+    plt.close()
+
+    # Melt pool contour comparision plot
+    plt.figure()
+    t_melt = 700
+    plt.contour(x, y, np.transpose(T), [t_melt], colors="red", linewidths=1)
+    plt.contour(x, y, np.transpose(T_no_velocity), [t_melt], colors="blue", linewidths=1)
+    # plt.colorbar(label='Temperature [K]')
+    plt.xlabel('x [m]')
+    plt.ylabel('y [m]')
+    plt.savefig(os.path.join(plots_dir, "melt_pool_comparision.png"))
     plt.close()
 
     # pressure contour plot
